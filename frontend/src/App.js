@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, DollarSign, Target, Brain, Activity, Play, RefreshCw, Server, Wifi, WifiOff, Zap, CheckCircle, Clock, AlertTriangle, BookOpen, BarChart3, Settings, Database, Cpu, Shield, TrendingDown, Award, Users, Globe, Calendar, X } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { TrendingUp, DollarSign, Target, Brain, Activity, Play, RefreshCw, Server, Wifi, WifiOff, Zap, CheckCircle, Clock, AlertTriangle, BarChart3, Settings, Database, Cpu, Shield, TrendingDown, X } from 'lucide-react';
 
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
   ? '' // Same domain on Vercel
   : 'http://localhost:8000'; // Your local FastAPI dev server
-  
+
 const App = () => {
   const [currentView, setCurrentView] = useState('overview');
   const [pipelineStatus, setPipelineStatus] = useState({ status: 'idle', progress: 0, current_step: '', error: null });
@@ -21,37 +21,37 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // API helper function with better error handling
-  const apiCall = async (endpoint, options = {}) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        headers: { 'Content-Type': 'application/json', ...options.headers },
-        ...options,
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}`);
-      }
-      
-      return await response.json();
-    } catch (err) {
-      console.error(`API call failed for ${endpoint}:`, err);
-      throw err;
+// Remove API_BASE_URL from the dependency array
+const apiCall = useCallback(async (endpoint, options = {}) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options,
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `HTTP ${response.status}`);
     }
-  };
+    
+    return await response.json();
+  } catch (err) {
+    console.error(`API call failed for ${endpoint}:`, err);
+    throw err;
+  }
+}, []); // Empty array - API_BASE_URL is a constant
 
-  // Check backend connection
-  const checkConnection = async () => {
-    try {
-      await apiCall('/');
-      setIsConnected(true);
-      setError(null);
-    } catch (err) {
-      setIsConnected(false);
-      setError('Backend connection failed');
-    }
-  };
+// checkConnection stays the same
+const checkConnection = useCallback(async () => {
+  try {
+    await apiCall('/');
+    setIsConnected(true);
+    setError(null);
+  } catch (err) {
+    setIsConnected(false);
+    setError('Backend connection failed');
+  }
+}, [apiCall]);
 
   // Start ML pipeline
   const startPipeline = async () => {
@@ -172,12 +172,12 @@ const App = () => {
     }
   };
 
-  // Check connection on mount
-  useEffect(() => {
-    checkConnection();
-    const interval = setInterval(checkConnection, 30000);
-    return () => clearInterval(interval);
-  }, []);
+// Your useEffect
+useEffect(() => {
+  checkConnection();
+  const interval = setInterval(checkConnection, 30000);
+  return () => clearInterval(interval);
+}, [checkConnection]);
 
   // Format data for chart display
   const formatChartData = (backtestData) => {
