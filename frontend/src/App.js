@@ -3,9 +3,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { TrendingUp, DollarSign, Target, Brain, Activity, Play, RefreshCw, Server, Wifi, WifiOff, Zap, CheckCircle, Clock, AlertTriangle, BookOpen, BarChart3, Settings, Database, Cpu, Shield, TrendingDown, Award, Users, Globe, Calendar, X } from 'lucide-react';
 
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-railway-app-name.railway.app' 
+  ? 'https://your-app-name.onrender.com' 
   : 'http://localhost:8000';
-  
+
 const App = () => {
   const [currentView, setCurrentView] = useState('overview');
   const [pipelineStatus, setPipelineStatus] = useState({ status: 'idle', progress: 0, current_step: '', error: null });
