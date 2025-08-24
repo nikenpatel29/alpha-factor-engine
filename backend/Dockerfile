@@ -1,26 +1,33 @@
-FROM python:3.13-slim
+FROM python:3.11-slim
 
-# Install system dependencies including Rust
+# Create a writable directory for Rust/Cargo
+RUN mkdir -p /tmp/cargo-home /tmp/rustup-home
+ENV CARGO_HOME=/tmp/cargo-home
+ENV RUSTUP_HOME=/tmp/rustup-home
+ENV PATH="/tmp/cargo-home/bin:${PATH}"
+
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     pkg-config \
     libssl-dev \
     cmake \
-    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
     && rm -rf /var/lib/apt/lists/*
 
-# Add Rust to PATH
-ENV PATH="/root/.cargo/bin:${PATH}"
+# Install Rust in writable temp directory
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
 
 WORKDIR /app
 
-# Copy requirements and install
+# Copy and install requirements
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
 
-# Copy app
+# Install with aggressive caching disabled and prefer wheels
+RUN CARGO_NET_GIT_FETCH_WITH_CLI=true \
+    pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --prefer-binary -r requirements.txt
+
 COPY . .
 
 EXPOSE $PORT
