@@ -3,7 +3,10 @@
     "builds": [
       {
         "src": "frontend/package.json",
-        "use": "@vercel/next"
+        "use": "@vercel/static-build",
+        "config": {
+          "distDir": "frontend/dist"
+        }
       },
       {
         "src": "backend/api.py",
@@ -12,7 +15,11 @@
     ],
     "routes": [
       { "src": "/api/(.*)", "dest": "backend/api.py" },
-      { "src": "/(.*)", "dest": "frontend/$1" }
-    ]
+      { "src": "/(.*)", "dest": "frontend/dist/$1" }
+    ],
+    "functions": {
+      "backend/api.py": {
+        "runtime": "python3.9"
+      }
+    }
   }
-  
