@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/Users/nikenpatel/Alpha Factor Prediction with Machine Learning/alpha-factor-system/backend/venv"
+VIRTUAL_ENV="/Users/nikenpatel/Alpha Factor Prediction with Machine Learning/alpha-factor-engine/backend/venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
