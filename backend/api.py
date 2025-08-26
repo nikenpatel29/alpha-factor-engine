@@ -34,6 +34,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:5173",  # Vite dev server
+        "https://alpha-factor-engine.vercel.app",
         "https://*.vercel.app",   # All Vercel apps
     ],
     allow_credentials=True,
