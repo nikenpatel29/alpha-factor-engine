@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { TrendingUp, DollarSign, Target, Brain, Activity, Play, RefreshCw, Server, Wifi, WifiOff, Zap, CheckCircle, Clock, AlertTriangle, BarChart3, Settings, Database, Cpu, Shield, TrendingDown, X } from 'lucide-react';
 
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://YOUR_APP_NAME.onrender.com'
+  ? 'https://alpha-factor-engine.onrender.com'
   : 'http://localhost:8000';
 
 const App = () => {
