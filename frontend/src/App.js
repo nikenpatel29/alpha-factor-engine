@@ -3,8 +3,8 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { TrendingUp, DollarSign, Target, Brain, Activity, Play, RefreshCw, Server, Wifi, WifiOff, Zap, CheckCircle, Clock, AlertTriangle, BarChart3, Settings, Database, Cpu, Shield, TrendingDown, X } from 'lucide-react';
 
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '' // Same domain on Vercel
-  : 'http://localhost:8000'; // Your local FastAPI dev server
+  ? 'https://YOUR_APP_NAME.onrender.com'
+  : 'http://localhost:8000';
 
 const App = () => {
   const [currentView, setCurrentView] = useState('overview');

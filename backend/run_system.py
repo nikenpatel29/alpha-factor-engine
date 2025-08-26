@@ -1,291 +1,343 @@
 #!/usr/bin/env python3
 """
-Alpha Factor Trading System Startup Script
-==========================================
-
-This script starts the complete quantitative trading system:
-1. FastAPI backend server
-2. Optional: React frontend (if you have it set up)
-3. Health checks and system validation
-
-Usage:
-    python run_system.py           # Start backend only
-    python run_system.py --full    # Start backend + frontend (if available)
-    python run_system.py --test    # Run system tests
+Debug version of run_system.py with better error reporting
 """
 
 import os
 import sys
 import subprocess
 import time
-import requests
-import argparse
+import threading
+import queue
 from pathlib import Path
 
 def print_banner():
-    """Print system startup banner"""
-    print("=" * 80)
-    print("🚀 ALPHA FACTOR TRADING SYSTEM")
-    print("=" * 80)
-    print("🧠 Quantitative ML Pipeline | FastAPI Backend | React Frontend")
-    print("💼 S&P 500 Alpha Factor Prediction with XGBoost + Random Forest")
-    print("-" * 80)
+    print("🚀 Alpha Factor System - Debug Mode")
+    print("-" * 50)
 
-def check_dependencies():
-    """Check if required files and dependencies exist"""
-    print("🔍 Checking system dependencies...")
-    
-    required_files = [
-        "main.py",
-        "utils/data_generator.py",
-        "utils/alpha_factors.py", 
-        "models/ml_models.py",
-        "backtesting/backtesting_engine.py"
-    ]
-    
-    missing_files = []
-    for file in required_files:
-        if not Path(file).exists():
-            missing_files.append(file)
-    
-    if missing_files:
-        print(f"❌ Missing required files: {missing_files}")
-        print("   Please ensure all pipeline files are in the correct directories.")
+def check_api_file():
+    """Check if api.py exists and has proper FastAPI setup"""
+    if not Path("api.py").exists():
+        print("❌ api.py not found")
         return False
     
-    print("✅ All required files found")
+    print("✅ Found api.py")
     
-    # Check Python packages
-    required_packages = [
-        "fastapi", "uvicorn", "pandas", "numpy", "scikit-learn", 
-        "xgboost", "pydantic", "python-multipart"
-    ]
-    
-    missing_packages = []
-    for package in required_packages:
-        try:
-            __import__(package.replace("-", "_"))
-        except ImportError:
-            missing_packages.append(package)
-    
-    if missing_packages:
-        print(f"❌ Missing Python packages: {missing_packages}")
-        print("   Install with: pip install " + " ".join(missing_packages))
-        return False
-    
-    print("✅ All required packages installed")
-    return True
-
-def start_backend():
-    """Start the FastAPI backend server"""
-    print("🔧 Starting FastAPI backend server...")
-    
+    # Check contents
     try:
-        # Start uvicorn server
-        process = subprocess.Popen([
-            sys.executable, "-m", "uvicorn", 
-            "backend:app", 
-            "--host", "0.0.0.0",
-            "--port", "8000", 
-            "--reload"
-        ])
+        with open("api.py", "r") as f:
+            content = f.read()
         
-        print("⏳ Waiting for backend to start...")
-        time.sleep(3)
+        if "FastAPI" in content:
+            print("✅ FastAPI import found")
+        else:
+            print("⚠️ No FastAPI import found in api.py")
         
-        # Health check
-        try:
-            response = requests.get("http://localhost:8000/", timeout=5)
-            if response.status_code == 200:
-                print("✅ Backend server started successfully!")
-                print("🔗 API Health Check: http://localhost:8000/")
-                print("📊 Swagger UI: http://localhost:8000/docs")
-                print("📖 API Documentation: http://localhost:8000/redoc")
-                return process
-            else:
-                print(f"❌ Backend health check failed: {response.status_code}")
-                return None
-        except requests.exceptions.RequestException as e:
-            print(f"❌ Backend connection failed: {e}")
-            return None
+        if "app = FastAPI(" in content:
+            print("✅ FastAPI app object found")
+        else:
+            print("⚠️ No 'app = FastAPI()' pattern found")
             
-    except Exception as e:
-        print(f"❌ Failed to start backend: {e}")
-        return None
-
-def test_pipeline():
-    """Test the ML pipeline functionality"""
-    print("🧪 Testing ML pipeline...")
-    
-    try:
-        # Import and test main pipeline
-        from main import main as run_pipeline
-        print("✅ Pipeline import successful")
-        
-        # You could add more specific tests here
-        print("✅ Pipeline ready for execution")
         return True
         
     except Exception as e:
-        print(f"❌ Pipeline test failed: {e}")
+        print(f"❌ Error reading api.py: {e}")
         return False
 
-def test_api_endpoints():
-    """Test API endpoints"""
-    print("🔌 Testing API endpoints...")
-    
-    base_url = "http://localhost:8000"
-    endpoints = [
-        "/",
-        "/status", 
-        "/debug/state"
-    ]
-    
-    for endpoint in endpoints:
-        try:
-            response = requests.get(f"{base_url}{endpoint}", timeout=5)
-            if response.status_code == 200:
-                print(f"✅ {endpoint} - OK")
-            else:
-                print(f"❌ {endpoint} - Status {response.status_code}")
-        except Exception as e:
-            print(f"❌ {endpoint} - Error: {e}")
-
-def start_frontend():
-    """Start React frontend if available"""
-    print("🎨 Checking for React frontend...")
-    
-    frontend_paths = ["frontend", "client", "ui", "."]
-    package_json_found = False
-    
-    for path in frontend_paths:
-        if Path(f"{path}/package.json").exists():
-            print(f"✅ Found package.json in {path}")
-            package_json_found = True
-            
-            try:
-                print("📦 Installing frontend dependencies...")
-                subprocess.run(["npm", "install"], cwd=path, check=True)
-                
-                print("🚀 Starting React development server...")
-                process = subprocess.Popen(
-                    ["npm", "start"], 
-                    cwd=path,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE
-                )
-                
-                print("⏳ Frontend starting... (this may take a moment)")
-                time.sleep(5)
-                print("✅ React frontend should be available at http://localhost:3000")
-                return process
-                
-            except subprocess.CalledProcessError as e:
-                print(f"❌ Frontend startup failed: {e}")
-                return None
-            except FileNotFoundError:
-                print("❌ npm not found. Please install Node.js and npm")
-                return None
-            break
-    
-    if not package_json_found:
-        print("ℹ️  No React frontend found (package.json not found)")
-        print("   You can still use the API directly or via Swagger UI")
-        return None
-
-def main():
-    """Main startup function"""
-    parser = argparse.ArgumentParser(description="Alpha Factor Trading System Startup")
-    parser.add_argument("--full", action="store_true", help="Start both backend and frontend")
-    parser.add_argument("--test", action="store_true", help="Run system tests only") 
-    parser.add_argument("--no-checks", action="store_true", help="Skip dependency checks")
-    
-    args = parser.parse_args()
-    
-    print_banner()
-    
-    # Dependency checks
-    if not args.no_checks:
-        if not check_dependencies():
-            print("\n❌ Dependency check failed. Please fix the issues above.")
-            return 1
-    
-    # Test mode
-    if args.test:
-        print("\n🧪 RUNNING SYSTEM TESTS")
-        print("-" * 40)
-        success = test_pipeline()
-        if success:
-            print("\n✅ All tests passed!")
-            return 0
-        else:
-            print("\n❌ Tests failed!")
-            return 1
-    
-    # Start backend
-    print("\n🔧 STARTING BACKEND SERVER")
-    print("-" * 40)
-    backend_process = start_backend()
-    
-    if not backend_process:
-        print("❌ Failed to start backend server")
-        return 1
-    
-    # Test API endpoints
-    time.sleep(2)
-    test_api_endpoints()
-    
-    # Start frontend if requested
-    frontend_process = None
-    if args.full:
-        print("\n🎨 STARTING FRONTEND")
-        print("-" * 40)
-        frontend_process = start_frontend()
-    
-    # System ready
-    print("\n" + "=" * 80)
-    print("🎯 SYSTEM READY!")
-    print("=" * 80)
-    print("🔗 Backend API: http://localhost:8000")
-    print("📊 Swagger UI: http://localhost:8000/docs") 
-    print("🔧 Debug Info: http://localhost:8000/debug/state")
-    if frontend_process:
-        print("🎨 Frontend UI: http://localhost:3000")
-    print("\n💡 To start the ML pipeline:")
-    print("   1. Visit http://localhost:8000/docs")
-    print("   2. Use POST /pipeline/start endpoint")
-    print("   3. Monitor with GET /status endpoint")
-    print("\n⌨️  Press Ctrl+C to stop all services")
-    print("-" * 80)
+def test_imports():
+    """Test if we can import the api module"""
+    print("\n🔍 Testing imports...")
     
     try:
-        # Keep processes running
-        while True:
-            time.sleep(1)
-            
-            # Check if backend is still running
-            if backend_process.poll() is not None:
-                print("❌ Backend process died")
-                break
-                
-            # Check if frontend is still running (if started)
-            if frontend_process and frontend_process.poll() is not None:
-                print("❌ Frontend process died")
-    
-    except KeyboardInterrupt:
-        print("\n\n🛑 Shutting down system...")
+        # Try importing api module
+        import api
+        print("✅ Successfully imported api module")
         
-        if backend_process:
-            backend_process.terminate()
-            print("✅ Backend stopped")
+        # Check if it has app attribute
+        if hasattr(api, 'app'):
+            print("✅ Found 'app' attribute in api module")
+            return True
+        else:
+            print("❌ No 'app' attribute found in api module")
+            return False
             
-        if frontend_process:
-            frontend_process.terminate() 
-            print("✅ Frontend stopped")
-            
-        print("👋 System shutdown complete")
+    except ImportError as e:
+        print(f"❌ Failed to import api module: {e}")
+        print(f"   Full error: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Error testing api import: {e}")
+        return False
+
+def test_dependencies():
+    """Test if required dependencies are available"""
+    print("\n🔍 Testing dependencies...")
     
-    return 0
+    required_packages = ["fastapi", "uvicorn", "pydantic", "pandas", "numpy"]
+    missing_packages = []
+    
+    for package in required_packages:
+        try:
+            __import__(package)
+            print(f"✅ {package}")
+        except ImportError:
+            print(f"❌ {package} - MISSING")
+            missing_packages.append(package)
+    
+    if missing_packages:
+        print(f"\n⚠️ Missing packages: {missing_packages}")
+        print("   Install with: pip install " + " ".join(missing_packages))
+        return False
+    
+    return True
+
+def capture_output(process, output_queue):
+    """Capture process output in real-time"""
+    for line in iter(process.stdout.readline, ''):
+        if line:
+            output_queue.put(('stdout', line.strip()))
+    
+    for line in iter(process.stderr.readline, ''):
+        if line:
+            output_queue.put(('stderr', line.strip()))
+
+def start_api_with_detailed_logging():
+    """Start the API with detailed error reporting"""
+    print("\n🚀 Starting FastAPI server...")
+    
+    # Try multiple startup methods
+    startup_commands = [
+        # Method 1: Direct uvicorn module call
+        [sys.executable, "-m", "uvicorn", "api:app", "--host", "127.0.0.1", "--port", "8000", "--reload"],
+        # Method 2: Without reload
+        [sys.executable, "-m", "uvicorn", "api:app", "--host", "127.0.0.1", "--port", "8000"],
+        # Method 3: Direct Python execution (if api.py has if __name__ == "__main__")
+        [sys.executable, "api.py"],
+    ]
+    
+    for i, cmd in enumerate(startup_commands, 1):
+        print(f"\n⏳ Trying method {i}: {' '.join(cmd)}")
+        
+        try:
+            # Start the process
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                bufsize=1
+            )
+            
+            # Set up output capture
+            output_queue = queue.Queue()
+            stdout_thread = threading.Thread(target=capture_output, args=(process, output_queue))
+            stdout_thread.daemon = True
+            stdout_thread.start()
+            
+            # Monitor for startup success or failure
+            startup_timeout = 10  # seconds
+            start_time = time.time()
+            
+            while time.time() - start_time < startup_timeout:
+                # Check if process died
+                if process.poll() is not None:
+                    # Process ended, collect all output
+                    remaining_stdout, remaining_stderr = process.communicate()
+                    if remaining_stdout:
+                        print(f"📝 Final stdout: {remaining_stdout}")
+                    if remaining_stderr:
+                        print(f"❌ Final stderr: {remaining_stderr}")
+                    print(f"❌ Process exited with code: {process.returncode}")
+                    break
+                
+                # Check for output
+                try:
+                    while True:
+                        output_type, line = output_queue.get_nowait()
+                        print(f"📝 {output_type}: {line}")
+                        
+                        # Check for success indicators
+                        if "Uvicorn running on" in line or "Application startup complete" in line:
+                            print("✅ Server appears to be starting successfully!")
+                            time.sleep(2)  # Give it a moment to fully start
+                            return test_server_response(process)
+                        
+                        # Check for common error patterns
+                        if any(error in line.lower() for error in ["error", "failed", "exception", "traceback"]):
+                            print(f"❌ Error detected: {line}")
+                            
+                except queue.Empty:
+                    pass
+                
+                time.sleep(0.1)
+            
+            # If we get here, either timeout or process ended
+            if process.poll() is None:
+                print("⏳ Server might be starting slowly, testing connection...")
+                result = test_server_response(process)
+                if result:
+                    return result
+                else:
+                    print("❌ Server not responding, trying next method...")
+                    process.terminate()
+            
+        except FileNotFoundError:
+            print(f"❌ Command not found: {cmd[0]}")
+        except Exception as e:
+            print(f"❌ Error starting process: {e}")
+    
+    print("❌ All startup methods failed!")
+    return None
+
+def test_server_response(process=None):
+    """Test if the server is responding"""
+    print("\n🔍 Testing server response...")
+    
+    test_urls = [
+        "http://localhost:8000/",
+        "http://127.0.0.1:8000/", 
+        "http://localhost:8000/docs",
+        "http://localhost:8000/health"
+    ]
+    
+    for url in test_urls:
+        try:
+            print(f"   Testing {url}...")
+            
+            # Try with requests if available
+            try:
+                import requests
+                response = requests.get(url, timeout=5)
+                print(f"   ✅ {url} -> Status: {response.status_code}")
+                if response.status_code == 200:
+                    print(f"   📄 Response: {response.text[:100]}...")
+                    return process
+            except ImportError:
+                # Fallback to urllib
+                import urllib.request
+                import urllib.error
+                
+                with urllib.request.urlopen(url, timeout=5) as response:
+                    content = response.read().decode()
+                    print(f"   ✅ {url} -> Status: {response.getcode()}")
+                    print(f"   📄 Response: {content[:100]}...")
+                    return process
+                    
+        except Exception as e:
+            print(f"   ❌ {url} -> {str(e)[:50]}...")
+            continue
+    
+    print("❌ No endpoints responding")
+    return None
+
+def check_port_availability():
+    """Check if port 8000 is available"""
+    print("\n🔍 Checking port availability...")
+    
+    import socket
+    
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('127.0.0.1', 8000))
+        print("✅ Port 8000 is available")
+        return True
+    except OSError:
+        print("❌ Port 8000 is already in use")
+        
+        # Try to find what's using the port
+        try:
+            result = subprocess.run(["lsof", "-i", ":8000"], capture_output=True, text=True)
+            if result.stdout:
+                print("📝 Process using port 8000:")
+                print(result.stdout)
+        except:
+            try:
+                result = subprocess.run(["netstat", "-an", "|", "grep", "8000"], capture_output=True, text=True, shell=True)
+                if result.stdout:
+                    print("📝 Port 8000 status:")
+                    print(result.stdout)
+            except:
+                pass
+        
+        return False
+
+def main():
+    """Main debugging function"""
+    print_banner()
+    
+    # Step 1: Check if api.py exists and is valid
+    print("Step 1: Checking api.py...")
+    if not check_api_file():
+        print("❌ api.py check failed")
+        return 1
+    
+    # Step 2: Test dependencies
+    print("\nStep 2: Checking dependencies...")
+    if not test_dependencies():
+        print("❌ Dependencies check failed")
+        return 1
+    
+    # Step 3: Test imports
+    print("\nStep 3: Testing imports...")
+    if not test_imports():
+        print("❌ Import test failed")
+        return 1
+    
+    # Step 4: Check port availability
+    print("\nStep 4: Checking port availability...")
+    port_available = check_port_availability()
+    if not port_available:
+        print("⚠️ Port 8000 is in use. The server might already be running!")
+        print("   Try visiting http://localhost:8000 in your browser")
+        
+        # Test if it's our API
+        existing_process = test_server_response()
+        if existing_process:
+            print("✅ API is already running and responding!")
+            return 0
+        else:
+            print("❌ Something else is using port 8000")
+            return 1
+    
+    # Step 5: Start the API server
+    print("\nStep 5: Starting API server...")
+    process = start_api_with_detailed_logging()
+    
+    if process:
+        print("\n" + "="*60)
+        print("🎉 SUCCESS! API is running!")
+        print("="*60)
+        print("🔗 Main API: http://localhost:8000")
+        print("📚 Docs: http://localhost:8000/docs")
+        print("🔧 Debug: http://localhost:8000/debug/state")
+        print("="*60)
+        print("\n💡 You can now:")
+        print("   1. Visit http://localhost:8000/docs to see API documentation")
+        print("   2. Test the health endpoint: curl http://localhost:8000/")
+        print("   3. Start the ML pipeline: curl -X POST http://localhost:8000/pipeline/start")
+        print("\n⌨️ Press Ctrl+C to stop the server...")
+        
+        try:
+            # Keep running until interrupted
+            while True:
+                time.sleep(1)
+                if process.poll() is not None:
+                    print("❌ Server stopped unexpectedly")
+                    break
+        except KeyboardInterrupt:
+            print("\n\n🛑 Stopping server...")
+            process.terminate()
+            print("✅ Server stopped")
+        
+        return 0
+    else:
+        print("\n❌ Failed to start API server")
+        print("\n🔧 Manual troubleshooting steps:")
+        print("   1. Run: python -c 'import api; print(\"API import OK\")'")
+        print("   2. Run: python -m uvicorn api:app --reload")
+        print("   3. Check: pip list | grep -E '(fastapi|uvicorn|pydantic)'")
+        print("   4. Try: python api.py")
+        return 1
 
 if __name__ == "__main__":
     exit_code = main()
